@@ -1,0 +1,63 @@
+name: Build Verification
+
+on:
+  push:
+    branches: [ main, master, develop ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build with Maven (skip tests)
+        run: mvn -B clean install -DskipTests --file pom.xml
+
+      - name: Verify artifacts
+        run: |
+          echo "✅ Build successful!"
+          ls -la target/
+          echo ""
+          echo "📦 Generated artifacts:"
+          ls -lh target/*.jar 2>/dev/null || echo "No JAR files found"
+
+      - name: Notify build status
+        if: github.ref_type == 'tag'
+        run: |
+          echo "🎉 Tag ${{ github.ref_name }} built successfully!"
+          echo "📦 JitPack will build this automatically"
+          echo "🔗 Check status: https://jitpack.io/#serateco-dev/wiz-common-lib"
+
+  # 태그 푸시 시 GitHub Release 자동 생성
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: |
+            ## 📦 WIZ Common Library ${{ github.ref_name }}
