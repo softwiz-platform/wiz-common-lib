@@ -235,6 +235,31 @@ public abstract class BaseExceptionHandler {
     }
 
     /**
+     * 요청 본문 역직렬화 실패 처리 (400 Bad Request)
+     * - JSON 타입 불일치 (String 필드에 Array 전송 등)
+     * - JSON 형식 자체가 잘못된 경우
+     * - 필수 필드 타입 오류
+     */
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(
+            org.springframework.http.converter.HttpMessageNotReadableException ex,
+            WebRequest request) {
+
+        String path = extractPath(request);
+        String detail = ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage();
+
+        log.warn("Request body parse failed at [{}]: {}", path, detail);
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.builder()
+                        .requestId(getRequestId())
+                        .code("INVALID_REQUEST_BODY")
+                        .message("요청 데이터 형식 오류")
+                        .path(path)
+                        .build());
+    }
+
+    /**
      * Validation 예외 처리 (400 Bad Request)
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
