@@ -487,6 +487,47 @@ public class JwtUtil {
         }
     }
 
+    /**
+     * 서명 유효성만 검증 (만료 여부 무시)
+     * 로그아웃(revoke) 등 만료된 토큰도 처리해야 하는 케이스에서 사용
+     */
+    public boolean isTokenSignatureValid(String token) {
+        if (token == null || token.isBlank()) {
+            return false;
+        }
+        try {
+            Jwts.parser()
+                    .verifyWith(getSecretKey())
+                    .build()
+                    .parseSignedClaims(token);
+            return true;
+        } catch (ExpiredJwtException e) {
+            // 서명은 유효, 단지 만료된 토큰 -> 유효로 처리
+            return true;
+        } catch (JwtException | IllegalArgumentException e) {
+            log.warn("JWT signature validation error: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Claims 추출 (만료 무시)
+     * 서명이 유효한 경우 만료된 토큰의 클레임도 반환
+     * 로그아웃(revoke) 등 만료 토큰도 처리해야 하는 케이스에서 사용
+     */
+    public Claims extractAllClaimsIgnoreExpiry(String token) {
+        try {
+            return Jwts.parser()
+                    .verifyWith(getSecretKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+        } catch (ExpiredJwtException e) {
+            // 서명은 유효하지만 만료된 토큰 -> claims 반환
+            return e.getClaims();
+        }
+    }
+
     public boolean isRefreshToken(String token) {
         try {
             Claims claims = extractAllClaims(token);
