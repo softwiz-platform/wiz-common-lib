@@ -54,6 +54,23 @@
 			<scope>provided</scope>
 		</dependency>
 
+		<!-- Spring Messaging (provided, optional) — STOMP ChannelInterceptor 용. -->
+		<!-- STOMP 사용 서비스만 본인 의존성으로 가져오면 동작, 안 쓰는 서비스는 영향 없음. -->
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-messaging</artifactId>
+			<scope>provided</scope>
+			<optional>true</optional>
+		</dependency>
+
+		<!-- Spring WebSocket (provided, optional) — STOMP 핸드쉐이크 인터셉터 등 추후 확장 대비. -->
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-websocket</artifactId>
+			<scope>provided</scope>
+			<optional>true</optional>
+		</dependency>
+
 		<!-- Spring JDBC (provided) - DAO 예외 처리용 -->
 		<dependency>
 			<groupId>org.springframework</groupId>
