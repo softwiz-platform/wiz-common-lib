@@ -123,47 +123,6 @@ HMAC-SHA256으로 직접 호출 방지
 // 자동으로 검증 (GatewayHeaderInterceptor)
 ```
 
-### 6. STOMP JWT 인증 (WebSocket)
-WebSocket 핸드쉐이크는 브라우저 API 제약으로 게이트웨이가 토큰을 못 받음 →
-STOMP CONNECT 프레임에 토큰을 실어 보내고, 서비스 자체에서 검증.
-공통 추상 클래스가 JWT 검증/세션 저장을 담당하고, 토픽별 권한은 각 서비스가 구현.
-
-```java
-@Component
-public class MyServiceStompInterceptor extends AbstractJwtStompChannelInterceptor {
-    private final MyDomainMapper mapper;
-
-    public MyServiceStompInterceptor(JwtUtil jwtUtil, MyDomainMapper mapper) {
-        super(jwtUtil);
-        this.mapper = mapper;
-    }
-
-    @Override
-    protected boolean isSubscriptionAllowed(Long userNo, String destination, StompHeaderAccessor a) {
-        // 본 서비스의 도메인 데이터로 권한 검증 (예: 모임 멤버십, 페어링 정보, 채팅방 멤버 등)
-        return mapper.canAccess(userNo, destination);
-    }
-}
-```
-
-`WebSocketConfig` 에서 등록:
-```java
-@Override
-public void configureClientInboundChannel(ChannelRegistration registration) {
-    registration.interceptors(myServiceStompInterceptor);
-}
-```
-
-클라이언트(STOMP):
-```js
-const client = new Client({
-    webSocketFactory: () => new SockJS(wsUrl),
-    connectHeaders: { Authorization: `Bearer ${accessToken}` }
-});
-```
-
-자세한 가이드는 [stomp/AbstractJwtStompChannelInterceptor.java](src/main/java/org/softwiz/platform/iot/common/lib/stomp/AbstractJwtStompChannelInterceptor.java) JavaDoc 참조.
-
 ---
 
 ## 🏗️ 아키텍처
@@ -232,11 +191,6 @@ API Gateway (Spring Cloud Gateway)
 ---
 
 ## 🚀 버전 히스토리
-
-### 1.1.0 (예정)
-- ✨ STOMP JWT 인증 추상 베이스 (`AbstractJwtStompChannelInterceptor`) 추가
-- spring-messaging / spring-websocket 의존성 추가 (provided + optional)
-- 각 서비스가 본인 도메인 권한 로직만 구현하도록 책임 분리
 
 ### 1.0.0 (2025-01-XX)
 - ✨ 초기 릴리스

@@ -105,7 +105,6 @@ import java.util.TimeZone;
         "org.softwiz.platform.iot.common.lib.filter",
         "org.softwiz.platform.iot.common.lib.interceptor",
         "org.softwiz.platform.iot.common.lib.service",
-        "org.softwiz.platform.iot.common.lib.stomp",   // STOMP 관련 (abstract 베이스 + 추후 헬퍼). abstract 클래스는 자동 빈 등록 대상이 아니라 안전.
         "org.softwiz.platform.iot.common.lib.util",
         "org.softwiz.platform.iot.common.lib.validator",
         "org.softwiz.platform.iot.common.lib.exception",
