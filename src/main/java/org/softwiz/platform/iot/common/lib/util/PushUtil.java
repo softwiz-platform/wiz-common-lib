@@ -189,10 +189,13 @@ public class PushUtil {
      * 푸시 타입 (통일)
      */
     public enum PushType {
-        SYSTEM("SYSTEM"),           // 시스템 알림
-        TRANSACTION("TRANSACTION"), // 거래 알림
-        VERIFY("VERIFY"),           // 인증 알림
-        MARKETING("MARKETING");     // 마케팅 알림
+        SYSTEM("SYSTEM"),                 // 시스템 알림
+        VERIFY("VERIFY"),                 // 인증 알림
+        SECURITY_ALERT("SECURITY_ALERT"), // 보안 알림
+        SYSTEM_ALERT("SYSTEM_ALERT"),     // 시스템 경보
+        PUSH("PUSH"),                     // 일반 푸시
+        TRANSACTION("TRANSACTION"),       // 거래 알림
+        MARKETING("MARKETING");           // 마케팅 알림
 
         private final String code;
 
@@ -387,6 +390,11 @@ public class PushUtil {
             return this;
         }
 
+        public PushRequestBuilder push() {
+            this.pushType = PushType.PUSH.getCode();
+            return this;
+        }
+
         public PushRequestBuilder transaction() {
             this.pushType = PushType.TRANSACTION.getCode();
             return this;
@@ -400,6 +408,16 @@ public class PushUtil {
         public PushRequestBuilder marketing() {
             this.pushType = PushType.MARKETING.getCode();
             this.consentType = ConsentType.MARKETING_PUSH.getCode();
+            return this;
+        }
+
+        public PushRequestBuilder securityAlert() {
+            this.pushType = PushType.SECURITY_ALERT.getCode();
+            return this;
+        }
+
+        public PushRequestBuilder systemAlert() {
+            this.pushType = PushType.SYSTEM_ALERT.getCode();
             return this;
         }
 

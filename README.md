@@ -88,6 +88,46 @@ public class UserController {
 
 ---
 
+## 🛡 사내 표준 — DB 드라이버 정책
+
+WIZ 플랫폼 모든 마이크로서비스는 **MariaDB Connector/J (LGPL v2.1)** 를 사용합니다.
+
+### ✅ 사용해야 할 드라이버
+```xml
+<dependency>
+    <groupId>org.mariadb.jdbc</groupId>
+    <artifactId>mariadb-java-client</artifactId>
+    <version>3.5.6</version>
+    <scope>runtime</scope>
+</dependency>
+```
+
+```yaml
+spring:
+  datasource:
+    driver-class-name: org.mariadb.jdbc.Driver
+    url: jdbc:mariadb://${DB_HOST}:3306/${DB_NAME}?useSSL=false&serverTimezone=Asia/Seoul
+```
+
+### ❌ 사용 금지 (라이센스 위험)
+- `com.mysql:mysql-connector-j` (GPL v2 + FOSS Exception) — 상용/SaaS 배포 시 GPL 의무 발생 가능
+- `com.mysql.cj.jdbc.Driver` 사용 금지
+- `jdbc:mysql://...` URL 형식 사용 금지
+
+### 📋 그 외 사용 금지 도구 (Oracle 라이센스 청구 위험)
+- `mysqlbackup` (= MySQL Enterprise Backup) → 대신 `mysqldump` / `xtrabackup` 사용
+- MySQL Workbench Enterprise Edition 메뉴 → Community Edition 또는 DBeaver 사용
+- `audit_log` / Enterprise Firewall / Enterprise Encryption 플러그인 설치 금지
+
+### 🟢 호환성
+- MariaDB Connector/J 3.x 는 **MySQL 5.5 ~ 8.0 / MariaDB 10.x** 모두 호환
+- 사내 인프라(MySQL 8.0.45 InnoDB Cluster) 와 검증 완료
+- caching_sha2_password 인증 지원 (3.0.5+)
+
+> wiz-common-lib 자체는 JDBC 드라이버를 의존하지 않습니다 (`scope=provided`). 각 마이크로서비스가 위 표준에 따라 명시 의존성을 추가하세요.
+
+---
+
 ## 🔧 주요 기능
 
 ### 1. Gateway Context 관리
