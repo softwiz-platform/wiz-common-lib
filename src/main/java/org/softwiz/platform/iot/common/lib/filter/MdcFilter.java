@@ -102,10 +102,48 @@ public class MdcFilter implements Filter {
         }
 
         // 내부/시스템 경로 (prefix 기반)
-        return uri.startsWith("/actuator")
+        if (uri.startsWith("/actuator")
                 || uri.contains("/actuator/")   // ← 추가: /admin/actuator/** 대응
                 || uri.startsWith("/health")
-                || uri.startsWith("/.well-known");
+                || uri.startsWith("/.well-known")) {
+            return true;
+        }
+
+        // SockJS keepalive / 협상 경로
+        // 게이트웨이의 PublicPathConfig.shouldSkipLogging 이 이 경로들에 대해
+        // 로그/헤더 주입을 건너뛰므로 (트래픽이 너무 잦음), 백엔드 도착 시 X-Request-Id 가
+        // 비어있는 게 정상 동작이다. 그래서 "Direct call?" WARN 을 발화시킬 필요 없음 →
+        // silent 처리. 단, 진짜 의심스러운 직접 호출(SockJS 도 아니고 정적 자원도 아닌)은
+        // WARN 그대로 유지되므로 보안/디버깅 가치 손실 없음.
+        return isWebSocketKeepaliveTraffic(uri);
+    }
+
+    /**
+     * SockJS transport keepalive / 협상 경로 판별.
+     *
+     * <p>게이트웨이의 {@code PublicPathConfig.shouldSkipLogging} 과 동일한 패턴을 유지.
+     * 패턴이 game-changer 가 되지 않도록 두 곳을 동기화 필요.</p>
+     *
+     * <p>SockJS transport endpoint 명명 규칙 (sockjs-protocol 기준):</p>
+     * <ul>
+     *   <li>{@code /xhr_send} : XHR 전송 (매 keepalive 마다 발생)</li>
+     *   <li>{@code /xhr_streaming} : XHR streaming long-poll (~100s 주기 재연결)</li>
+     *   <li>{@code /eventsource}, {@code /htmlfile}, {@code /jsonp}, {@code /jsonp_send} : fallback transport</li>
+     *   <li>{@code .../ws/.../info} : transport 협상</li>
+     * </ul>
+     *
+     * <p>주의: {@code /websocket} 핸드쉐이크는 의도적으로 매칭하지 않는다 —
+     * 게이트웨이가 X-Request-Id 를 정상 주입하므로 백엔드에 도착할 때 missing 이면
+     * 진짜 직접 호출 의심 케이스 → WARN 유지가 옳음.</p>
+     */
+    private boolean isWebSocketKeepaliveTraffic(String uri) {
+        return uri.endsWith("/xhr_send")
+                || uri.endsWith("/xhr_streaming")
+                || uri.endsWith("/eventsource")
+                || uri.endsWith("/htmlfile")
+                || uri.endsWith("/jsonp_send")
+                || uri.endsWith("/jsonp")
+                || (uri.contains("/ws/") && uri.endsWith("/info"));
     }
     /**
      * 짧은 UUID 생성 (8자리)
