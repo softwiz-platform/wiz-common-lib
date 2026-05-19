@@ -40,12 +40,17 @@ public class GatewayHeaderInterceptor implements HandlerInterceptor {
             return false;
         }
 
+        // 클라이언트가 매 요청마다 보내는 타임존 (익명/인증 무관)
+        String timezone = request.getHeader("X-User-Timezone");
+
         // ★★★ 2. 사용자 헤더가 있으면 GatewayContext 설정 ★★★
         String encryptedUserId = request.getHeader("X-User-Id");
 
         if (encryptedUserId == null || encryptedUserId.isBlank()) {
             // 익명 요청: 빈 GatewayContext 설정 (null 대신 빈 객체로 접근 가능)
-            GatewayContext.setContext(GatewayContext.builder().build());
+            GatewayContext.setContext(GatewayContext.builder()
+                    .timezone(timezone)
+                    .build());
             log.debug("Anonymous request passed with empty context: {} {}", request.getMethod(), request.getRequestURI());
             return true;
         }
@@ -106,6 +111,7 @@ public class GatewayHeaderInterceptor implements HandlerInterceptor {
                 .clientIp(clientIp)
                 .deviceCd(deviceCd)
                 .deviceStr(deviceStr)
+                .timezone(timezone)
                 .accessToken(accessToken)
                 .build();
 

@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 
@@ -82,6 +83,14 @@ public class GatewayContext {
      * 디바이스 상세 정보
      */
     private String deviceStr;
+
+    /**
+     * 사용자 디바이스 타임존 (IANA, 예: "Asia/Seoul", "Europe/London")
+     *
+     * 클라이언트가 매 요청마다 X-User-Timezone 헤더로 전달.
+     * DST/이동 자동 대응을 위해 IANA TZ ID 사용 (offset 형태 X).
+     */
+    private String timezone;
 
     /**
      * JWT Access Token (마이크로서비스 간 전파용)
@@ -213,6 +222,34 @@ public class GatewayContext {
     }
 
     /**
+     * 현재 사용자 타임존 가져오기 (편의 메서드)
+     *
+     * @return 타임존 IANA ID (없으면 null)
+     */
+    public static String getCurrentTimezone() {
+        GatewayContext context = getCurrent();
+        return context != null ? context.getTimezone() : null;
+    }
+
+    /**
+     * 현재 사용자 ZoneId 가져오기 (없거나 잘못된 경우 기본값 반환)
+     *
+     * @param defaultZone 기본 ZoneId (예: ZoneId.of("Asia/Seoul"))
+     * @return 사용자 ZoneId 또는 기본값
+     */
+    public static ZoneId getCurrentZoneIdOrDefault(ZoneId defaultZone) {
+        String tz = getCurrentTimezone();
+        if (tz == null || tz.isBlank()) {
+            return defaultZone;
+        }
+        try {
+            return ZoneId.of(tz);
+        } catch (Exception e) {
+            return defaultZone;
+        }
+    }
+
+    /**
      * 현재 Access Token 가져오기 (편의 메서드)
      *
      * 용도: 마이크로서비스 간 내부 호출 시 Authorization 헤더 전달
@@ -324,6 +361,7 @@ public class GatewayContext {
                 ", clientIp='" + clientIp + '\'' +
                 ", deviceCd='" + deviceCd + '\'' +
                 ", deviceStr='" + deviceStr + '\'' +
+                ", timezone='" + timezone + '\'' +
                 ", hasAccessToken=" + (accessToken != null && !accessToken.isEmpty()) +
                 '}';
     }
